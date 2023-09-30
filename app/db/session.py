@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.settings import Settings
 
-engine = create_engine(Settings().DATABASE_URL)
+engine = create_engine(Settings().DB_URL)
 
 
 def get_session():
