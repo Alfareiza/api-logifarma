@@ -46,8 +46,8 @@ def search_inventario(criteria: SearchCriteria, session: Session = Depends(get_s
         ).all()
 
         if not result:
-            raise HTTPException(status_code=404,
-                                detail=f"No hay inventario para el código de molécula {cod_molecula!r}.")
+            return JSONResponse(status_code=404,
+                                content={"error": f"No hay inventario para el código de molécula {cod_molecula!r}."})
         return {
             "cod_mol": cod_molecula,
             "ubi_dane": dane,
