@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, APIRouter
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse
 
 from app.db.session import get_session
 from app.models import Inventario, Municipio, Centros
@@ -29,13 +30,15 @@ def search_inventario(criteria: SearchCriteria, session: Session = Depends(get_s
         municipio = session.query(Municipio).filter_by(cod_dane=dane).first()
 
         if not municipio:
-            raise HTTPException(status_code=404, detail=f"No ha sido encontrado municipio con código dane {dane!r}.")
+            return JSONResponse(status_code=404,
+                                content={"error": f"No ha ido encontrado municipio con código dane {dane!r}."})
 
         # Busca los centros del municipio encontrado
         centros = session.query(Centros).filter_by(municipio_id=municipio.id).all()
 
         if not centros:
-            raise HTTPException(status_code=404, detail=f"No ha sido encontrado centros en {municipio.name.title()}.")
+            return JSONResponse(status_code=404,
+                                content={"error": f"No han sido encontrados centros en {municipio.name.title()}."})
 
         result = session.query(Inventario).filter(
             Inventario.cod_mol == cod_molecula,
