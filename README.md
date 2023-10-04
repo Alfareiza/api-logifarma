@@ -10,6 +10,7 @@ This API, developed using FastAPI as a web framework for building APIs in Python
 
 > ***The project was initiated to serve freelance objectives.***
 
+The documentation for this project is not entirely open to the public; that's why you won't find information on endpoints and other details.
 
 # 💡Credits
 
