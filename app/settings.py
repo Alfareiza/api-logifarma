@@ -1,3 +1,5 @@
+import logging
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,5 +22,9 @@ class Settings(BaseSettings):
     EMAIL_ADMIN: str
 
     EMAIL_TEMPLATES_DIR: str = "app/email-templates/base"
+
+    logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
+    LOG: logging.Logger = logging.getLogger(__name__)
+
 
 settings = Settings()

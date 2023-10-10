@@ -1,11 +1,11 @@
-from fastapi import Depends, HTTPException, APIRouter
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from fastapi import Depends, APIRouter
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 
 from app.db.session import get_session
 from app.models import Inventario, Municipio, Centros
-from app.schemas import InventarioSchemaList, SearchCriteria
+from app.schemas import SearchCriteria
+from app.settings import settings
 from app.utils import filter_inventario_by_cum, notify_email
 
 router = APIRouter()
@@ -22,6 +22,8 @@ router = APIRouter()
 def search_inventario(criteria: SearchCriteria, session: Session = Depends(get_session)):
     try:
         input_params = criteria.__dict__
+        id_session = id(session)
+        settings.LOG.info(f"{id_session=}, {input_params=}")
 
         dane = input_params.get('ubi_dane')
         cod_molecula = input_params.get('cod_mol')
@@ -30,15 +32,17 @@ def search_inventario(criteria: SearchCriteria, session: Session = Depends(get_s
         municipio = session.query(Municipio).filter_by(cod_dane=dane).first()
 
         if not municipio:
-            return JSONResponse(status_code=404,
-                                content={"error": f"No ha ido encontrado municipio con código dane {dane!r}."})
+            msg = f"No ha ido encontrado municipio con código dane {dane!r}."
+            settings.LOG.info(f"{id_session=}, {msg}")
+            return JSONResponse(status_code=404, content={"error": msg})
 
         # Busca los centros del municipio encontrado
         centros = session.query(Centros).filter_by(municipio_id=municipio.id).all()
 
         if not centros:
-            return JSONResponse(status_code=404,
-                                content={"error": f"No han sido encontrados centros en {municipio.name.title()}."})
+            msg = f"No han sido encontrados centros en {municipio.name.title()}."
+            settings.LOG.info(f"{id_session=}, {msg}")
+            return JSONResponse(status_code=404, content={"error": msg})
 
         result = session.query(Inventario).filter(
             Inventario.cod_mol == cod_molecula,
@@ -46,13 +50,19 @@ def search_inventario(criteria: SearchCriteria, session: Session = Depends(get_s
         ).all()
 
         if not result:
-            return JSONResponse(status_code=404,
-                                content={"error": f"No hay inventario para el código de molécula {cod_molecula!r}."})
-        return {
+            msg = f"No hay inventario para el código de molécula {cod_molecula!r}."
+            settings.LOG.info(f"{id_session=}, {msg}")
+            return JSONResponse(status_code=404, content={"error": msg})
+
+        resp = {
             "cod_mol": cod_molecula,
             "ubi_dane": dane,
             "articulos": [art for art in filter_inventario_by_cum(result).values()],
             "cantidadTotal": sum(item.inventario for item in result)
         }
+
+        settings.LOG.info(f"{id_session=}, {resp=}")
+
+        return resp
     except Exception as e:
         notify_email(f"Error={e}\nParams={input_params}")
